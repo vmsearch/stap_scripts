@@ -1,0 +1,15 @@
+global latency
+
+probe kernel.function("ext4_file_write_iter").return {
+    dev = __file_dev($iocb->ki_filp)
+    devname = __find_bdevname(dev, __file_bdev($iocb->ki_filp))
+    latency[devname] << gettimeofday_ns()-@entry(gettimeofday_ns())
+
+}
+
+probe end {
+    foreach ( [devname] in latency) {
+        printf("devname %s average latency %d\n", devname, @avg(latency[devname]))
+    }
+
+}
